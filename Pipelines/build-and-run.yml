@@ -1,0 +1,61 @@
+trigger:
+- none
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  solution: '**/*.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+
+steps:
+- task: NuGetToolInstaller@1
+
+# restore nuget packages
+- task: NuGetCommand@2
+  inputs:
+    restoreSolution: '$(solution)'
+    feedsToUse: 'select'
+    vstsFeed: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+    includeNuGetOrg: true
+
+# build the solution for release
+- task: VSBuild@1
+  inputs:
+    solution: '$(solution)'
+    msbuildArgs: '/p:Configuration=$(buildConfiguration) /p:Platform="$(buildPlatform)"'
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(system.defaultworkingdirectory)'
+    Contents: '**\bin\$(buildConfiguration)\**'
+    TargetFolder: '$(build.artifactstagingdirectory)'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    artifactName: 'drop'
+    publishLocation: 'Container'
+
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: |
+      # Set execution policy
+      Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope Process -Force
+
+      # Install .NET Framework
+      $webClient = New-Object System.Net.WebClient
+      $url = "https://download.microsoft.com/download/B/0/E/B0E3A342-676B-4839-9C77-03DD0EFBFD84/NDP472-KB4054530-x86-x64-AllOS-ENU.exe"
+      $exePath = "$($env:TEMP)\NDP472-KB4054530-x86-x64-AllOS-ENU.exe"
+      $webClient.DownloadFile($url, $exePath)
+      Start-Process -FilePath $exePath -ArgumentList "/q" -Wait
+
+      # Start Windows Forms application
+      Set-Location '$(build.artifactstagingdirectory)'
+      $exePath = Get-ChildItem -Path '.' -Recurse -Include '*.exe' | Select-Object -First 1
+      Start-Process -FilePath $exePath.FullName
+
+  displayName: 'Run Windows Forms app'
