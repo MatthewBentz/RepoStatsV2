@@ -30,6 +30,15 @@ steps:
     restoreSolution: '$(solution)'
 
 # --------------
+# Replace Tokens
+
+- task: FileTransform@1
+  inputs:
+    folderPath: '$(System.DefaultWorkingDirectory)'
+    fileType: 'xml'
+    targetFiles: '**/*.config'
+
+# --------------
 # Build Solution
 
 - task: VSBuild@1
