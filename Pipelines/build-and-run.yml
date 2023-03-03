@@ -1,3 +1,13 @@
+# ----------------------
+# Run every day at 23:00
+
+schedules:
+- cron: "0 23 * * *"
+  displayName: Daily Build and Run
+  branches:
+    include:
+    - master
+
 trigger:
 - none
 
@@ -12,15 +22,16 @@ variables:
 steps:
 - task: NuGetToolInstaller@1
 
-# restore nuget packages
+# ----------------------
+# Restore Nuget Packages
+
 - task: NuGetCommand@2
   inputs:
     restoreSolution: '$(solution)'
-    feedsToUse: 'select'
-    vstsFeed: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
-    includeNuGetOrg: true
 
-# build the solution for release
+# --------------
+# Build Solution
+
 - task: VSBuild@1
   inputs:
     solution: '$(solution)'
@@ -40,22 +51,21 @@ steps:
     publishLocation: 'Container'
 
 - task: PowerShell@2
+  displayName: 'Run Windows Forms app'
   inputs:
     targetType: 'inline'
     script: |
       # Set execution policy
-      Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope Process -Force
+      #Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope Process -Force
 
       # Install .NET Framework
-      $webClient = New-Object System.Net.WebClient
-      $url = "https://download.microsoft.com/download/B/0/E/B0E3A342-676B-4839-9C77-03DD0EFBFD84/NDP472-KB4054530-x86-x64-AllOS-ENU.exe"
-      $exePath = "$($env:TEMP)\NDP472-KB4054530-x86-x64-AllOS-ENU.exe"
-      $webClient.DownloadFile($url, $exePath)
-      Start-Process -FilePath $exePath -ArgumentList "/q" -Wait
+      #$webClient = New-Object System.Net.WebClient
+      #$url = "https://download.microsoft.com/download/B/0/E/B0E3A342-676B-4839-9C77-03DD0EFBFD84/NDP472-KB4054530-x86-x64-AllOS-ENU.exe"
+      #$exePath = "$($env:TEMP)\NDP472-KB4054530-x86-x64-AllOS-ENU.exe"
+      #$webClient.DownloadFile($url, $exePath)
+      #Start-Process -FilePath $exePath -ArgumentList "/q" -Wait
 
-      # Start Windows Forms application
+      # Start Application
       Set-Location '$(build.artifactstagingdirectory)'
       $exePath = Get-ChildItem -Path '.' -Recurse -Include '*.exe' | Select-Object -First 1
       Start-Process -FilePath $exePath.FullName
-
-  displayName: 'Run Windows Forms app'
