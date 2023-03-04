@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Contains Personal Tokens
+/RepoStatsV2/App.Debug.config
