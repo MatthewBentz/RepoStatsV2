@@ -45,12 +45,15 @@ namespace RepoStatsV2
             var repos = client.Repository.GetAllForUser(username).Result
                 .Where(repo => !repo.Private);
             
-            Console.WriteLine("Public repositories found:");
-            foreach (var repo in repos)
+            Console.WriteLine($"{repos.Count()} public repositories found.\n");
+
+            // --------------------------------------
+            // Local directory to save the PNG files.
+
+            if (!Directory.Exists("Charts"))
             {
-                Console.WriteLine($"\t{repo.Name}");
+                Directory.CreateDirectory("Charts");
             }
-            Console.WriteLine("\nChart image URLs:");
 
             #endregion
 
@@ -71,18 +74,6 @@ namespace RepoStatsV2
                 var chartArea = new ChartArea("Default");
                 chart.ChartAreas.Add(chartArea);
 
-                chartArea.AxisX.Interval = 1;
-                chartArea.AxisX.LabelStyle.Angle = 45;
-                chartArea.AxisX.MajorGrid.Enabled = false;
-                chartArea.AxisX.LabelStyle.Font = new Font("Arial", 16, FontStyle.Regular);
-
-                chartArea.AxisY.MajorGrid.Enabled = false;
-                chartArea.AxisY.LabelStyle.Font = new Font("Arial", 16, FontStyle.Regular);
-
-                chartArea.BackImageWrapMode = ChartImageWrapMode.Unscaled;
-                chartArea.BackImageAlignment = ChartImageAlignmentStyle.Center;
-                chartArea.BackImage = Path.Combine(Directory.GetCurrentDirectory(), "Media\\auburn-logo.png");
-
                 // ----------------------
                 // Add views to the chart
 
@@ -98,26 +89,57 @@ namespace RepoStatsV2
                     chart.Series["datedViews"].Points.AddXY(date.ToString("M/dd"), viewCount);
                 }
 
-                // -------------
-                // Chart styling
+                // ------------------------
+                // Chart styling light mode
 
-                chart.Titles.Add(
-                    new Title($"Recent Views for {repo.Name}")
-                    {
-                        Font = new Font("Arial", 26, FontStyle.Bold)
-                    });
+                var title = new Title($"Recent Views for {repo.Name}")
+                {
+                    Font = new Font("Arial", 26, FontStyle.Bold)
+                };
+                chart.Titles.Add(title);
                 chart.Width = 1000;
                 chart.Height = 700;
                 chart.Palette = ChartColorPalette.SeaGreen;
 
+                chartArea.AxisX.Interval = 1;
+                chartArea.AxisX.LabelStyle.Angle = 45;
+                chartArea.AxisX.MajorGrid.Enabled = false;
+                chartArea.AxisX.LabelStyle.Font = new Font("Arial", 16, FontStyle.Regular);
+
+                chartArea.AxisY.MajorGrid.Enabled = false;
+                chartArea.AxisY.LabelStyle.Font = new Font("Arial", 16, FontStyle.Regular);
+
+                chartArea.BackImageWrapMode = ChartImageWrapMode.Unscaled;
+                chartArea.BackImageAlignment = ChartImageAlignmentStyle.Center;
+                chartArea.BackImage = Path.Combine(Directory.GetCurrentDirectory(), "Media\\auburn-logo-color.png");
+
                 // ---------------------------------
                 // Export the chart image to a file.
 
-                if (!Directory.Exists("Charts"))
-                {
-                    Directory.CreateDirectory("Charts");
-                }
                 chart.SaveImage($"Charts\\{repo.Name}_ViewsChart.png", ChartImageFormat.Png);
+
+                // -----------------------
+                // Chart styling dark mode
+
+                title.ForeColor = Color.White;
+
+                chartArea.AxisX.LineColor = Color.White;
+                chartArea.AxisX.LabelStyle.ForeColor = Color.White;
+                chartArea.AxisX.MajorTickMark.LineColor = Color.White;
+
+                chartArea.AxisY.LineColor = Color.White;
+                chartArea.AxisY.LabelStyle.ForeColor = Color.White;
+                chartArea.AxisY.MajorTickMark.LineColor = Color.White;
+
+                chart.BackColor = Color.FromArgb(13, 17, 23);
+                chartArea.BackColor = Color.FromArgb(13, 17, 23);
+
+                chartArea.BackImage = Path.Combine(Directory.GetCurrentDirectory(), "Media\\auburn-logo-white.png");
+
+                // ---------------------------------
+                // Export the chart image to a file.
+
+                chart.SaveImage($"Charts\\{repo.Name}_ViewsChart_Dark.png", ChartImageFormat.Png);
 
                 #endregion
 
@@ -127,20 +149,39 @@ namespace RepoStatsV2
                 // Post the saved chart PNG to the S3 bucket.
                 // ------------------------------------------
 
+                // -----
+                // Light
+
                 var s3Client = new AmazonS3Client(awsAccessKey, awsSecretKey, RegionEndpoint.USEast2);
 
-                var request = new PutObjectRequest
+                var requestLight = new PutObjectRequest
                 {
                     BucketName = "repostatscharts",
                     Key = $"MatthewsRepos/{repo.Name}_ViewsChart.png",
                     InputStream = new MemoryStream(File.ReadAllBytes($"Charts\\{repo.Name}_ViewsChart.png")),
                 };
-                request.Headers.CacheControl = "no-cache"; 
+                requestLight.Headers.CacheControl = "no-cache"; 
 
-                s3Client.PutObject(request);
+                s3Client.PutObject(requestLight);
                 var objectUrl = $"https://repostatscharts.s3.us-east-2.amazonaws.com/MatthewsRepos/{repo.Name}_ViewsChart.png";
 
-                Console.WriteLine($"\t{objectUrl}");
+                Console.WriteLine($"{repo.Name} - {objectUrl} (Light)");
+
+                // ----
+                // Dark
+
+                var requestDark = new PutObjectRequest
+                {
+                    BucketName = "repostatscharts",
+                    Key = $"MatthewsRepos/{repo.Name}_ViewsChart_Dark.png",
+                    InputStream = new MemoryStream(File.ReadAllBytes($"Charts\\{repo.Name}_ViewsChart_Dark.png")),
+                };
+                requestDark.Headers.CacheControl = "no-cache";
+
+                s3Client.PutObject(requestDark);
+                objectUrl = $"https://repostatscharts.s3.us-east-2.amazonaws.com/MatthewsRepos/{repo.Name}_ViewsChart_Dark.png";
+
+                Console.WriteLine($"{repo.Name} - {objectUrl} (Dark)");
 
                 #endregion
             }

@@ -1,8 +1,8 @@
-# ----------------------
-# Run every day at 23:00
+# ------------------------------------------------------------
+# Run every day at 6pm CST (Cutoff for traffic views 0:00 UTC)
 
 schedules:
-- cron: "0 23 * * *"
+- cron: "0 18 * * *"
   displayName: Daily Build and Run
   branches:
     include:
@@ -60,7 +60,7 @@ steps:
     publishLocation: 'Container'
 
 - task: PowerShell@2
-  displayName: 'Run Windows Forms app'
+  displayName: 'Run Windows Forms app (Console output)'
   inputs:
     targetType: 'inline'
     script: |

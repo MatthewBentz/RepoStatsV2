@@ -101,7 +101,13 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Media\auburn-logo.png">
+    <Content Include="Media\auburn-logo-black.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Media\auburn-logo-color.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Media\auburn-logo-white.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Media\Example_ViewsChart.png">
