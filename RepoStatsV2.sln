@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RepoStatsV2", "RepoStatsV2\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Pipelines", "Pipelines", "{9CD652D4-3B14-46B9-A766-15D33767BF18}"
 	ProjectSection(SolutionItems) = preProject
-		Pipelines\build-and-run.yml = Pipelines\build-and-run.yml
+		Pipelines\build-and-publish.yml = Pipelines\build-and-publish.yml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D251FC8B-EF84-4A24-8318-7E307F103576}"
