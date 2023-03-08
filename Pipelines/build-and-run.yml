@@ -1,15 +1,15 @@
 # ------------------------------------------------------------
 # Run every day at 6pm CST (Cutoff for traffic views 0:00 UTC)
 
-schedules:
-- cron: "0 18 * * *"
-  displayName: Daily Build and Run
-  branches:
-    include:
-    - master
+#schedules:
+#- cron: "0 18 * * *"
+#  displayName: Daily Build and Run
+#  branches:
+#    include:
+#   - master
 
 trigger:
-- none
+- master
 
 pool:
   vmImage: 'windows-latest'
@@ -20,11 +20,11 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
-- task: NuGetToolInstaller@1
 
 # ----------------------
 # Restore Nuget Packages
 
+- task: NuGetToolInstaller@1
 - task: NuGetCommand@2
   inputs:
     restoreSolution: '$(solution)'
@@ -32,11 +32,19 @@ steps:
 # --------------
 # Replace Tokens
 
-- task: FileTransform@1
+- task: replacetokens@5
   inputs:
-    folderPath: '$(System.DefaultWorkingDirectory)'
-    fileType: 'xml'
     targetFiles: '**/*.config'
+    encoding: 'auto'
+    tokenPattern: 'default'
+    writeBOM: true
+    actionOnMissing: 'warn'
+    keepToken: false
+    actionOnNoFiles: 'continue'
+    enableTransforms: false
+    enableRecursion: false
+    useLegacyPattern: false
+    enableTelemetry: true
 
 # --------------
 # Build Solution
@@ -48,33 +56,19 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
+# ---------------------
+# Copy Files to Staging
+
 - task: CopyFiles@2
   inputs:
     SourceFolder: '$(system.defaultworkingdirectory)'
     Contents: '**\bin\$(buildConfiguration)\**'
     TargetFolder: '$(build.artifactstagingdirectory)'
 
+# -----------------
+# Publish Artifacts
+
 - task: PublishBuildArtifacts@1
   inputs:
     artifactName: 'drop'
     publishLocation: 'Container'
-
-- task: PowerShell@2
-  displayName: 'Run Windows Forms app (Console output)'
-  inputs:
-    targetType: 'inline'
-    script: |
-      # Set execution policy
-      #Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope Process -Force
-
-      # Install .NET Framework
-      #$webClient = New-Object System.Net.WebClient
-      #$url = "https://download.microsoft.com/download/B/0/E/B0E3A342-676B-4839-9C77-03DD0EFBFD84/NDP472-KB4054530-x86-x64-AllOS-ENU.exe"
-      #$exePath = "$($env:TEMP)\NDP472-KB4054530-x86-x64-AllOS-ENU.exe"
-      #$webClient.DownloadFile($url, $exePath)
-      #Start-Process -FilePath $exePath -ArgumentList "/q" -Wait
-
-      # Start Application
-      Set-Location '$(build.artifactstagingdirectory)'
-      $exePath = Get-ChildItem -Path '.' -Recurse -Include '*.exe' | Select-Object -First 1
-      Start-Process -FilePath $exePath.FullName
